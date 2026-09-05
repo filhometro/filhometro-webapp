@@ -6,6 +6,7 @@ import { AttachmentPicker } from "@/components/AttachmentPicker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Anexo } from "@/lib/files";
 import { tipoLabel, type RecordType } from "@/lib/mock-data";
@@ -38,6 +39,8 @@ function NovoPage() {
   const [medicamento, setMedicamento] = useState("");
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [lembrete, setLembrete] = useState("");
+  const [lembreteDias, setLembreteDias] = useState("");
+  const [lembreteAtivo, setLembreteAtivo] = useState(false);
   const [dataEvento, setDataEvento] = useState(() => {
     const hoje = new Date();
     const atual = new Date(hoje.getTime() - hoje.getTimezoneOffset() * 60000);
@@ -70,6 +73,8 @@ function NovoPage() {
       medicamento: medicamento || undefined,
       anexos: anexos.length ? anexos : undefined,
       lembreteHoras: lembrete ? Number(lembrete) : undefined,
+      lembreteDias: lembreteDias ? Number(lembreteDias) : undefined,
+      lembreteAtivo: lembreteAtivo && Boolean(lembrete && lembreteDias),
     });
     navigate({ to: "/app/linha" });
   }
@@ -189,17 +194,52 @@ function NovoPage() {
             label="Anexos (receita, atestado, foto)"
           />
 
-          <div className="space-y-1.5">
-            <Label htmlFor="lembrete">Lembrete a cada (horas)</Label>
-            <Input
-              id="lembrete"
-              type="number"
-              min={1}
-              value={lembrete}
-              onChange={(e) => setLembrete(e.target.value)}
-              placeholder="6"
-            />
-          </div>
+          <section className="space-y-4 rounded-lg border border-border bg-secondary/30 p-4">
+            <div>
+              <h2 className="text-sm font-semibold">Lembrete</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Configure a frequência e por quanto tempo deseja receber o lembrete.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="lembrete">A cada (horas)</Label>
+                <Input
+                  id="lembrete"
+                  type="number"
+                  min={1}
+                  value={lembrete}
+                  onChange={(e) => setLembrete(e.target.value)}
+                  placeholder="6"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="lembrete-dias">Por (dias)</Label>
+                <Input
+                  id="lembrete-dias"
+                  type="number"
+                  min={1}
+                  value={lembreteDias}
+                  onChange={(e) => setLembreteDias(e.target.value)}
+                  placeholder="3"
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border bg-background p-3">
+              <div>
+                <Label htmlFor="lembrete-ativo">Status do lembrete</Label>
+                <p className="text-xs text-muted-foreground">
+                  {lembreteAtivo ? "Ativo" : "Inativo"}
+                </p>
+              </div>
+              <Switch
+                id="lembrete-ativo"
+                checked={lembreteAtivo}
+                onCheckedChange={setLembreteAtivo}
+                aria-label="Ativar lembrete"
+              />
+            </div>
+          </section>
 
           <Button type="submit" className="w-full">
             Salvar registro

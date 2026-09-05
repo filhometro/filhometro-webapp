@@ -170,13 +170,29 @@ function CalendarioPage() {
 
 function CalendarDayButton({
   day,
+  modifiers,
   eventosPorDia,
   ...props
 }: ComponentProps<typeof DayButton> & { eventosPorDia: Map<string, EventDay> }) {
   const evento = eventosPorDia.get(dateKey(day.date));
 
   return (
-    <DayButton {...props} day={day} className="relative flex-col gap-0.5">
+    <DayButton
+      {...props}
+      day={day}
+      modifiers={modifiers}
+      className={`relative flex-col gap-0.5 rounded-md ${
+        modifiers["selected"] && !modifiers["today"]
+      }`}
+      style={{
+        ...props.style,
+        boxShadow:
+          modifiers["selected"] && !modifiers["today"]
+            ? "inset 0 0 0 1px var(--primary)"
+            : undefined,
+        padding: modifiers["selected"] && !modifiers["today"] ? "6px" : undefined,
+      }}
+    >
       <span>{day.date.getDate()}</span>
       {evento && (
         <span className="flex max-w-full items-center justify-center gap-0.5 overflow-hidden">

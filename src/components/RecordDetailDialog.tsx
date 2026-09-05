@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Anexo } from "@/lib/files";
 import { tipoLabel, type Child, type HealthRecord, type RecordType } from "@/lib/mock-data";
@@ -63,6 +64,8 @@ export function RecordDetailDialog({
       temperatura: form.temperatura,
       medicamento: form.medicamento,
       lembreteHoras: form.lembreteHoras,
+      lembreteDias: form.lembreteDias,
+      lembreteAtivo: form.lembreteAtivo,
       anexos: form.anexos,
     });
     setEditando(false);
@@ -135,20 +138,59 @@ export function RecordDetailDialog({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="ed-lemb">Lembrete a cada (horas)</Label>
-              <Input
-                id="ed-lemb"
-                type="number"
-                min={1}
-                value={form.lembreteHoras ?? ""}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    lembreteHoras: e.target.value ? Number(e.target.value) : undefined,
-                  })
-                }
-              />
+            <div className="space-y-4 rounded-lg border border-border bg-secondary/30 p-4">
+              <div>
+                <p className="text-sm font-semibold">Lembrete</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Frequência, duração e status do lembrete.
+                </p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="ed-lemb">A cada (horas)</Label>
+                  <Input
+                    id="ed-lemb"
+                    type="number"
+                    min={1}
+                    value={form.lembreteHoras ?? ""}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        lembreteHoras: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ed-lemb-dias">Por (dias)</Label>
+                  <Input
+                    id="ed-lemb-dias"
+                    type="number"
+                    min={1}
+                    value={form.lembreteDias ?? ""}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        lembreteDias: e.target.value ? Number(e.target.value) : undefined,
+                      })
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex items-center justify-between rounded-md border border-border bg-background p-3">
+                <div>
+                  <Label htmlFor="ed-lemb-ativo">Status do lembrete</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {form.lembreteAtivo ? "Ativo" : "Inativo"}
+                  </p>
+                </div>
+                <Switch
+                  id="ed-lemb-ativo"
+                  checked={form.lembreteAtivo ?? false}
+                  onCheckedChange={(checked) => setForm({ ...form, lembreteAtivo: checked })}
+                  aria-label="Ativar lembrete"
+                />
+              </div>
             </div>
 
             <AttachmentPicker anexos={anexos} onChange={(a) => setForm({ ...form, anexos: a })} />
@@ -182,7 +224,11 @@ export function RecordDetailDialog({
               <Info titulo="Medicação" valor={form.medicamento ?? "—"} />
               <Info
                 titulo="Lembrete"
-                valor={form.lembreteHoras ? `A cada ${form.lembreteHoras}h` : "—"}
+                valor={
+                  form.lembreteHoras
+                    ? `A cada ${form.lembreteHoras}h${form.lembreteDias ? ` por ${form.lembreteDias} dias` : ""} (${form.lembreteAtivo ? "Ativo" : "Inativo"})`
+                    : "—"
+                }
               />
               <Info titulo="Favorito" valor={form.favorito ? "Sim" : "Não"} />
             </dl>

@@ -34,6 +34,8 @@ export type HealthRecord = {
   anexos?: import("./files").Anexo[] | undefined;
   favorito: boolean;
   lembreteHoras?: number | undefined;
+  lembreteDias?: number | undefined;
+  lembreteAtivo?: boolean | undefined;
 };
 
 export const tipoLabel: Record<RecordType, string> = {

@@ -1,15 +1,17 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Mars, Pencil, Trash2, Venus } from "lucide-react";
+import { Activity, BarChart3, Mars, Pencil, Trash2, Venus } from "lucide-react";
 import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { AttachmentPicker } from "@/components/AttachmentPicker";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Anexo } from "@/lib/files";
 import { useStore } from "@/lib/store";
+import type { Child, HealthRecord } from "@/lib/mock-data";
 import { isValidEmail } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/configuracoes")({
@@ -28,7 +30,7 @@ const fotoPadrao =
   "https://images.unsplash.com/photo-1519689680058-324335c77eba?w=200&h=200&fit=crop";
 
 function ConfigPage() {
-  const { user, meusFilhos, addFilho, atualizarFilho, removerFilho, salvarUsuario, sair } =
+  const { user, data, meusFilhos, addFilho, atualizarFilho, removerFilho, salvarUsuario, sair } =
     useStore();
   const navigate = useNavigate();
   const [editandoConta, setEditandoConta] = useState(false);
@@ -44,6 +46,7 @@ function ConfigPage() {
   const [foto, setFoto] = useState<Anexo[]>([]);
   const [filhoEditandoId, setFilhoEditandoId] = useState<string | null>(null);
   const [removerFilhoId, setRemoverFilhoId] = useState<string | null>(null);
+  const [estatisticasFilhoId, setEstatisticasFilhoId] = useState<string | null>(null);
 
   function limparFormulario() {
     setNome("");
@@ -232,6 +235,14 @@ function ConfigPage() {
               ) : null}
               <button
                 type="button"
+                onClick={() => setEstatisticasFilhoId(c.id)}
+                className="text-muted-foreground hover:text-primary"
+                aria-label={`Ver estatísticas de ${c.nome}`}
+              >
+                <BarChart3 className="size-4" />
+              </button>
+              <button
+                type="button"
                 onClick={() => editarFilho(c.id)}
                 className="text-muted-foreground hover:text-primary"
                 aria-label={`Editar ${c.nome}`}
@@ -329,6 +340,139 @@ function ConfigPage() {
         title="Remover filho?"
         description="Tem certeza de que deseja remover este filho? Esta ação não pode ser desfeita."
       />
+      <EstatisticasFilhoDialog
+        filhoId={estatisticasFilhoId}
+        filhos={meusFilhos}
+        registros={data.records}
+        onClose={() => setEstatisticasFilhoId(null)}
+      />
     </AppShell>
+  );
+}
+
+function EstatisticasFilhoDialog({
+  filhoId,
+  filhos,
+  registros,
+  onClose,
+}: {
+  filhoId: string | null;
+  filhos: Child[];
+  registros: HealthRecord[];
+  onClose: () => void;
+}) {
+  const filho = filhos.find((item) => item.id === filhoId);
+  if (!filho) return null;
+
+  const registrosDoFilho = registros
+    .filter((registro) => registro.childId === filho.id)
+    .sort((a, b) => +new Date(b.data) - +new Date(a.data));
+  const sintomas = registrosDoFilho.filter((registro) => registro.tipo === "sintoma");
+  const medicacoes = registrosDoFilho.filter((registro) => registro.tipo === "medicacao");
+  const meses = new Map<string, number>();
+
+  for (const sintoma of sintomas) {
+    const mes = new Date(sintoma.data).toLocaleDateString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+    meses.set(mes, (meses.get(mes) ?? 0) + 1);
+  }
+
+  const mesMaisDoente = [...meses.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  return (
+    <Dialog open onOpenChange={(aberto) => !aberto && onClose()}>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <BarChart3 className="size-5 text-primary" />
+            Estatísticas de {filho.nome}
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard icon={Activity} label="Vezes que ficou doente" value={sintomas.length} />
+            <StatCard icon={BarChart3} label="Registros totais" value={registrosDoFilho.length} />
+          </div>
+
+          <section className="rounded-lg border border-border bg-secondary/40 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Mês com mais sintomas
+            </p>
+            <p className="mt-2 text-base font-semibold capitalize">
+              {mesMaisDoente ? `${mesMaisDoente[0]} (${mesMaisDoente[1]})` : "Ainda não há dados"}
+            </p>
+          </section>
+
+          <StatList
+            title="3 últimas doenças"
+            empty="Nenhum sintoma registrado."
+            registros={sintomas.slice(0, 3)}
+          />
+          <StatList
+            title="3 últimas medicações"
+            empty="Nenhuma medicação registrada."
+            registros={medicacoes.slice(0, 3)}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Activity;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-lg border border-border p-3">
+      <Icon className="size-4 text-primary" />
+      <p className="mt-2 text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function StatList({
+  title,
+  empty,
+  registros,
+}: {
+  title: string;
+  empty: string;
+  registros: HealthRecord[];
+}) {
+  return (
+    <section>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      {registros.length === 0 ? (
+        <p className="mt-2 text-sm text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="mt-2 divide-y divide-border rounded-lg border border-border">
+          {registros.map((registro) => (
+            <li key={registro.id} className="flex items-center justify-between gap-3 p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{registro.titulo}</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(registro.data).toLocaleDateString("pt-BR")}
+                </p>
+              </div>
+              {registro.medicamento && (
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {registro.medicamento}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

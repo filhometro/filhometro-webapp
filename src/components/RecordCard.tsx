@@ -73,6 +73,8 @@ export function RecordCard({
             {registro.lembreteHoras ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-1 text-primary">
                 <Bell className="size-3.5" /> Lembrete a cada {registro.lembreteHoras}h
+                {registro.lembreteDias ? ` por ${registro.lembreteDias} dias` : ""}
+                {registro.lembreteAtivo === false ? " · Inativo" : ""}
               </span>
             ) : null}
             {anexos.length > 0 && (
