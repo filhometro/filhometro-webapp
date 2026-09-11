@@ -35,7 +35,7 @@ export function RecordDetailDialog({
   filho?: Child | undefined;
   onClose: () => void;
 }) {
-  const { atualizarRegistro } = useStore();
+  const { atualizarRegistro, meusFilhos } = useStore();
   const [editando, setEditando] = useState(false);
   const [form, setForm] = useState<HealthRecord | null>(registro);
 
@@ -57,6 +57,7 @@ export function RecordDetailDialog({
   function salvar() {
     if (!form || !registro) return;
     atualizarRegistro(registro.id, {
+      childId: form.childId,
       tipo: form.tipo,
       titulo: form.titulo,
       descricao: form.descricao,
@@ -80,6 +81,26 @@ export function RecordDetailDialog({
 
         {editando ? (
           <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Filho</Label>
+              <div className="flex flex-wrap gap-2">
+                {meusFilhos.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setForm({ ...form, childId: c.id })}
+                    className={`rounded-full border px-3 py-1.5 text-sm ${
+                      form.childId === c.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground"
+                    }`}
+                  >
+                    {c.nome}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <Label>Tipo</Label>
               <div className="flex flex-wrap gap-2">
