@@ -17,6 +17,11 @@ type Data = {
   sessionId: string | null;
 };
 
+export type AppToast = {
+  id: number;
+  message: string;
+};
+
 const KEY = "filhometro:data";
 
 const initialData: Data = {
@@ -32,7 +37,10 @@ type Ctx = {
   user: User | null;
   meusFilhos: Child[];
   tourPendente: boolean;
+  toast: AppToast | null;
   consumirTour: () => void;
+  mostrarToast: (message: string) => void;
+  fecharToast: () => void;
   entrar: (email: string, senha: string) => User | null;
   cadastrar: (nome: string, email: string, whatsapp: string, senha: string) => User | null;
   redefinirSenha: (email: string, senha: string) => boolean;
@@ -57,6 +65,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<Data>(initialData);
   const [ready, setReady] = useState(false);
   const [tourPendente, setTourPendente] = useState(false);
+  const [toast, setToast] = useState<AppToast | null>(null);
 
   useEffect(() => {
     try {
@@ -97,6 +106,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const consumirTour = useCallback(() => setTourPendente(false), []);
+  const mostrarToast = useCallback((message: string) => {
+    setToast({ id: Date.now(), message });
+  }, []);
+  const fecharToast = useCallback(() => setToast(null), []);
 
   const cadastrar = useCallback(
     (nome: string, email: string, whatsapp: string, senha: string) => {
@@ -137,62 +150,85 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     user,
     meusFilhos,
     tourPendente,
+    toast,
     consumirTour,
+    mostrarToast,
+    fecharToast,
     entrar,
     cadastrar,
     redefinirSenha,
     sair: () => setData((d) => ({ ...d, sessionId: null })),
-    addFilho: (nome, nascimento, sexo, foto) =>
+    addFilho: (nome, nascimento, sexo, foto) => {
       setData((d) => ({
         ...d,
         children: [
           ...d.children,
           { id: uid(), userId: d.sessionId ?? "", nome, nascimento, sexo, foto },
         ],
-      })),
-    atualizarFilho: (id, dados) =>
+      }));
+      mostrarToast("Filho criado com sucesso.");
+    },
+    atualizarFilho: (id, dados) => {
       setData((d) => ({
         ...d,
         children: d.children.map((c) => (c.id === id ? { ...c, ...dados } : c)),
-      })),
-    removerFilho: (id) =>
+      }));
+      mostrarToast("Dados do filho atualizados.");
+    },
+    removerFilho: (id) => {
       setData((d) => ({
         ...d,
         children: d.children.filter((c) => c.id !== id),
         records: d.records.filter((r) => r.childId !== id),
-      })),
-    addRegistro: (r) =>
-      setData((d) => ({ ...d, records: [{ ...r, id: uid(), favorito: false }, ...d.records] })),
-    atualizarRegistro: (id, patch) =>
+      }));
+      mostrarToast("Filho excluído com sucesso.");
+    },
+    addRegistro: (r) => {
+      setData((d) => ({ ...d, records: [{ ...r, id: uid(), favorito: false }, ...d.records] }));
+      mostrarToast("Registro criado com sucesso.");
+    },
+    atualizarRegistro: (id, patch) => {
       setData((d) => ({
         ...d,
         records: d.records.map((r) => (r.id === id ? { ...r, ...patch } : r)),
-      })),
+      }));
+      mostrarToast("Registro atualizado.");
+    },
     compartilharRegistro: (id) => {
       const record = data.records.find((r) => r.id === id);
       if (!record) return null;
       const child = data.children.find((c) => c.id === record.childId) ?? null;
       return saveSharedPost(record, child);
     },
-    removerRegistro: (id) =>
-      setData((d) => ({ ...d, records: d.records.filter((r) => r.id !== id) })),
-    toggleFavorito: (id) =>
+    removerRegistro: (id) => {
+      setData((d) => ({ ...d, records: d.records.filter((r) => r.id !== id) }));
+      mostrarToast("Registro excluído com sucesso.");
+    },
+    toggleFavorito: (id) => {
+      const registro = data.records.find((r) => r.id === id);
+      if (!registro) return;
       setData((d) => ({
         ...d,
         records: d.records.map((r) => (r.id === id ? { ...r, favorito: !r.favorito } : r)),
-      })),
-    salvarUsuario: (u) =>
+      }));
+      mostrarToast(registro.favorito ? "Registro removido dos favoritos." : "Registro favoritado.");
+    },
+    salvarUsuario: (u) => {
       setData((d) =>
         u.id
           ? { ...d, users: d.users.map((x) => (x.id === u.id ? ({ ...x, ...u } as User) : x)) }
           : { ...d, users: [...d.users, { ...u, id: uid() } as User] },
-      ),
-    removerUsuario: (id) =>
+      );
+      mostrarToast(u.id ? "Dados do usuário atualizados." : "Usuário criado com sucesso.");
+    },
+    removerUsuario: (id) => {
       setData((d) => ({
         ...d,
         users: d.users.filter((u) => u.id !== id),
         children: d.children.filter((c) => c.userId !== id),
-      })),
+      }));
+      mostrarToast("Usuário excluído com sucesso.");
+    },
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
