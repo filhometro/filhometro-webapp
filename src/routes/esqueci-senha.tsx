@@ -40,15 +40,12 @@ function ForgotPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-secondary/40 px-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6">
-        <div className="mb-6 flex items-center gap-2">
+      <div className="w-full max-w-sm p-6">
+        <Link to="/" className="mb-6 flex items-center justify-center gap-2">
           <Stethoscope className="size-5 text-primary" />
           <span className="font-semibold">Filhômetro</span>
-        </div>
-        <Link to="/" className="mb-4 inline-block text-sm text-primary hover:underline">
-          Voltar para início
         </Link>
-        <h1 className="text-lg font-semibold">Esqueci minha senha</h1>
+        <h1 className="text-center text-lg font-semibold">Esqueci minha senha</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Informe seu e-mail para receber as instruções de recuperação.
         </p>
