@@ -23,6 +23,8 @@ export type AppToast = {
 };
 
 const KEY = "filhometro:data";
+const REMEMBERED_SESSION_KEY = "filhometro:remembered-session";
+const TEMPORARY_SESSION_KEY = "filhometro:temporary-session";
 
 const initialData: Data = {
   users: seedUsers,
@@ -41,7 +43,7 @@ type Ctx = {
   consumirTour: () => void;
   mostrarToast: (message: string) => void;
   fecharToast: () => void;
-  entrar: (email: string, senha: string) => User | null;
+  entrar: (email: string, senha: string, manterLogado: boolean) => User | null;
   cadastrar: (nome: string, email: string, whatsapp: string, senha: string) => User | null;
   redefinirSenha: (email: string, senha: string) => boolean;
   sair: () => void;
@@ -70,7 +72,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) setData({ ...initialData, ...JSON.parse(raw) });
+      const savedData = raw ? (JSON.parse(raw) as Partial<Data>) : {};
+      const sessionId =
+        localStorage.getItem(REMEMBERED_SESSION_KEY) ??
+        sessionStorage.getItem(TEMPORARY_SESSION_KEY);
+      setData({ ...initialData, ...savedData, sessionId });
     } catch {
       /* ignora */
     }
@@ -92,12 +98,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   );
 
   const entrar = useCallback(
-    (email: string, senha: string) => {
+    (email: string, senha: string, manterLogado: boolean) => {
       const found = data.users.find(
         (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.senha === senha && u.ativo,
       );
       if (found) {
         setData((d) => ({ ...d, sessionId: found.id }));
+        sessionStorage.removeItem(TEMPORARY_SESSION_KEY);
+        localStorage.removeItem(REMEMBERED_SESSION_KEY);
+        if (manterLogado) localStorage.setItem(REMEMBERED_SESSION_KEY, found.id);
+        else sessionStorage.setItem(TEMPORARY_SESSION_KEY, found.id);
         setTourPendente(found.role !== "admin");
       }
       return found ?? null;
@@ -157,7 +167,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     entrar,
     cadastrar,
     redefinirSenha,
-    sair: () => setData((d) => ({ ...d, sessionId: null })),
+    sair: () => {
+      localStorage.removeItem(REMEMBERED_SESSION_KEY);
+      sessionStorage.removeItem(TEMPORARY_SESSION_KEY);
+      setData((d) => ({ ...d, sessionId: null }));
+    },
     addFilho: (nome, nascimento, sexo, foto) => {
       setData((d) => ({
         ...d,

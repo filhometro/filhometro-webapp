@@ -3,6 +3,7 @@ import { Stethoscope } from "lucide-react";
 import { useState } from "react";
 import { PasswordInput } from "@/components/PasswordInput";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { isValidEmail } from "@/lib/utils";
@@ -25,12 +26,13 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [manterLogado, setManterLogado] = useState(false);
   const [erro, setErro] = useState("");
 
   function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!isValidEmail(email)) return setErro("Informe um e-mail válido.");
-    const u = entrar(email, senha);
+    const u = entrar(email, senha, manterLogado);
     if (!u) return setErro("E-mail ou senha inválidos.");
     navigate({ to: u.role === "admin" ? "/admin" : "/app/linha" });
   }
@@ -66,6 +68,13 @@ function LoginPage() {
           <Link to="/esqueci-senha" className="text-sm text-primary hover:underline">
             Esqueci minha senha
           </Link>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Checkbox
+              checked={manterLogado}
+              onCheckedChange={(checked) => setManterLogado(checked === true)}
+            />
+            Manter logado
+          </label>
           {erro && <p className="text-sm text-destructive">{erro}</p>}
           <Button type="submit" className="w-full">
             Entrar
